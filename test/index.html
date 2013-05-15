@@ -1,0 +1,132 @@
+<!doctype html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Mocha Spec Runner</title>
+    <link rel="stylesheet" href="lib/mocha/mocha.css">
+    <script src="/components/jquery/jquery.js"></script>
+</head>
+<body>
+    <div id="mocha"></div>
+    <script src="lib/mocha/mocha.js"></script>
+    <script>
+    function mox(runner) {
+        var data = [];
+        var next = 1;
+
+        Mocha.reporters.Base.call(this, runner);
+
+        runner.on('start', function() {
+            console.log('start');
+        });
+        runner.on('end', function() {
+            console.log('end', this.suite, this.stats);
+            console.log(data);
+            // var seen = [];
+            // var data = JSON.stringify(this.suite, function(key, val) {
+            //     console.log(key, typeof val);
+            //     if (typeof val == "function") {
+            //         return "function";
+            //     } else if (key == "parent" || key == "ctx" || key == "$events") {
+            //         return;
+            //     } else {
+            //         return val;
+            //     }
+            // });
+            // $.ajax({
+            //     url: '/reporter',
+            //     type: 'POST',
+            //     data : data
+            // //         suite: this.suite,
+            // //         stats: this.stats
+            // //     }
+            // });
+
+
+        });
+        runner.on('suite', function(suite) {
+            suite.id = next++;
+        });
+        runner.on('suite end', function(suite) {
+            if (suite.root) {
+                data.push({on: "suite end",
+                          suite: {
+                                id: suite.id,
+                                pending: suite.pending,
+                                title: suite.title,
+                                root: suite.root,
+                                 }});
+            } else {
+                data.push({on: "suite end",
+                              suite: {
+                                id: suite.id,
+                                parent: suite.parent.id,
+                                pending: suite.pending,
+                                title: suite.title,
+                                root: suite.root,
+                                 }});
+            }
+        });
+        runner.on('test', function(test) {
+            test.id = next++;
+        });
+        runner.on('test end', function(test) {});
+        runner.on('hook', function(hook) {});
+        runner.on('hook end', function(hook) {});
+        runner.on('pass', function(test) {
+            console.log('pass', test.duration, test.speed);
+
+            data.push({on: "pass", test: {
+                id: test.id,
+                parent: test.parent.id,
+                async: test.async,
+                duration: test.duration,
+                pending: test.pending,
+                speed: test.speed,
+                state: test.state,
+                sync: test.sync,
+                timedOut: test.timedOut,
+                title: test.title,
+                type: "test"
+            }});
+        });
+        runner.on('fail', function(test, err) {
+            console.log('fail', test, err);
+
+            data.push({on: "fail", test: {
+                id: test.id,
+                parent: test.parent.id,
+                async: test.async,
+//                duration: test.duration,
+                pending: test.pending,
+//                speed: test.speed,
+                state: test.state,
+                sync: test.sync,
+                timedOut: test.timedOut,
+                title: test.title,
+                type: "test"
+            }});
+        });
+    }
+    </script>
+    <script>mocha.setup({ui: 'bdd',
+                         bail: false,
+                         reporter: function(runner) {
+                            return [
+                                new Mocha.reporters.HTML(runner),
+                                new mox(runner),
+                            ];
+                         } // 'xunit'
+                        })</script>
+    <!-- assertion framework -->
+    <script src="lib/chai.js"></script>
+    <script>var expect = chai.expect</script>
+
+    <!-- include source files here... -->
+
+    <!-- include spec files here... -->
+    <script src="spec/test.js"></script>
+
+    <script>mocha.run()</script>
+</body>
+</html>
